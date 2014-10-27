@@ -1,7 +1,7 @@
 ZLHistogramAudioPlot
 ====================
 
-A audio visualization view using EZAudio, inspired by [AudioCopy](https://itunes.apple.com/us/app/audiocopy/id719137307?mt=8).
+An audio visualization view using EZAudio, inspired by [AudioCopy](https://itunes.apple.com/us/app/audiocopy/id719137307?mt=8).
 
 Preview
 ---
@@ -14,7 +14,7 @@ Preview
 
 Dependencies
 ---
-ZLSinusWaveView is a subclass of `EZAudioPlot`. It requires [EZAudio](https://github.com/syedhali/EZAudio).
+ZLHistogramAudioPlot is a subclass of `EZAudioPlot`. It requires [EZAudio](https://github.com/syedhali/EZAudio).
 
 License
 ---
