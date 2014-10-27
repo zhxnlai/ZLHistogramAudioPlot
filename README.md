@@ -1,16 +1,16 @@
 ZLHistogramAudioPlot
 ====================
 
-A audio visualization view using EZAudio, inspired by AudioCopy.
+A audio visualization view using EZAudio, inspired by [AudioCopy](https://itunes.apple.com/us/app/audiocopy/id719137307?mt=8).
 
 Preview
 ---
 
 ###Buffer
-![preview buffer](httpshttps://github.com/zhxnlai/ZLHistogramAudioPlot/blob/master/previewBuffer.gif)
+![preview buffer](https://raw.githubusercontent.com/zhxnlai/ZLHistogramAudioPlot/master/previewBuffer.gif)
 
 ###Rolling
-![preview rolling](httpshttps://github.com/zhxnlai/ZLHistogramAudioPlot/blob/master/previewRolling.gif)
+![preview rolling](https://raw.githubusercontent.com/zhxnlai/ZLHistogramAudioPlot/master/previewRolling.gif)
 
 Dependencies
 ---
