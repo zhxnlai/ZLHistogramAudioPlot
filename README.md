@@ -7,10 +7,14 @@ Preview
 ---
 
 ###Buffer
-![preview buffer](https://raw.githubusercontent.com/zhxnlai/ZLHistogramAudioPlot/master/previewBuffer.gif)
+![preview buffer](Previews/ZLHistogramAudioPlotBuffer.gif)
 
 ###Rolling
-![preview rolling](https://raw.githubusercontent.com/zhxnlai/ZLHistogramAudioPlot/master/previewRolling.gif)
+![preview rolling](Previews/ZLHistogramAudioPlotRolling.gif)
+
+Usage
+---
+Checkout the demo app for an example.
 
 Dependencies
 ---
