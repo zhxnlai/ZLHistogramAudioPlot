@@ -10,14 +10,15 @@
 
 @interface ZLHistogramAudioPlot : EZAudioPlot
 
-/**
- *  the width of columns
- */
+#pragma mark - TypeBuffer
+
 @property (nonatomic) CGFloat barChartColumnWidth;
 @property (strong,nonatomic) NSArray *barChartColors;
 @property (strong,nonatomic) NSArray *barChartGrayColors;
 
 @property (nonatomic) BOOL shouldUseGrayColors;
+
+#pragma mark - TypeRolling
 
 @property (nonatomic) CGFloat rollingPlotColumnWidth;
 @property (nonatomic) CGFloat rollingPlotGapWidth;

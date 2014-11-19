@@ -31,7 +31,6 @@
     float *heightDecendingSpeeds;
     float *heightDecendingTimes;
     
-    
     // Rolling History
     BOOL    _setMaxLength;
     float   *_scrollHistory;
@@ -233,7 +232,6 @@ float MagnitudeSquared(float x, float y) {
     if (_plotType == EZPlotTypeBuffer) {
 
         NSMutableArray *magnitudes = nil;
-        NSMutableArray *magnitudeCounts = nil;
 
         uint32_t stride = 1;
 
@@ -252,7 +250,7 @@ float MagnitudeSquared(float x, float y) {
             // Reset the index.
             index = 0;
 
-    //        /*************** FFT ***************/
+            /*************** FFT ***************/
             /**
              Look at the real signal as an interleaved complex vector by casting it.
              Then call the transformation function vDSP_ctoz to get a split complex
@@ -268,34 +266,16 @@ float MagnitudeSquared(float x, float y) {
             vDSP_ztoc(&A, 1, (COMPLEX *)dataBuffer, 2, nOver2);
 
             
-
-    //        magnitudes = [[NSMutableArray alloc] initWithCapacity:numOfColumnsBuffer];
-    //        for (int i=0; i<numOfColumnsBuffer; i++) {
-    //            magnitudes[i] = [NSNumber numberWithFloat:0];
-    //        }
-    //        
-    //        magnitudeCounts = [[NSMutableArray alloc] initWithCapacity:numOfColumnsBuffer];
-    //        for (int i=0; i<numOfColumnsBuffer; i++) {
-    //            magnitudeCounts[i] = [NSNumber numberWithInt:0];
-    //        }
-            
             magnitudes = [[NSMutableArray alloc] initWithCapacity:numOfColumnsBuffer];
             for (int i=0; i<numOfColumnsBuffer; i++) {
                 magnitudes[i] = [[NSMutableArray alloc] init];
             }
             
-
-
             // Determine the dominant frequency by taking the magnitude squared and
             // saving the bin which it resides in.
-    //        float dominantFrequency = 0;
             int bin = -1;
             for (int i=0; i<n; i+=2) {
-    //            float curFreq = MagnitudeSquared(dataBuffer[i], dataBuffer[i+1]);
-    //            if (curFreq > dominantFrequency) {
-    //                dominantFrequency = curFreq;
-    //                bin = (i+1)/2;
-    //            }
+
                 float curFreqMagnitude = MagnitudeSquared(dataBuffer[i], dataBuffer[i+1]);
                 bin = (i+1)/2;
                 float curFreqInHz = bin*(sampleRate/bufferCapacity);
@@ -304,25 +284,12 @@ float MagnitudeSquared(float x, float y) {
                     float percent = (curFreqInHz-minFrequency)/(maxFrequency-minFrequency);
                     float width = 1.0/numOfColumnsBuffer;
                     int arrayIndex = percent/width;
-                    
-    //                if (curFreqMagnitude<0) {
-    //                    NSLog(@"saving Freq %f percent %f in bucket %i",curFreqInHz, percent/width, arrayIndex);
-    //
-    //                }
-                    
-    //                float magnitudeSum = [magnitudes[arrayIndex] floatValue];
-    //                magnitudeSum+=curFreqMagnitude;
-    //                magnitudes[arrayIndex] = [NSNumber numberWithFloat:magnitudeSum];
-    //                
-    //                magnitudeCounts[arrayIndex] = [NSNumber numberWithInt:[magnitudeCounts[arrayIndex] intValue] + 1.0];
-                    
+
                     [(NSMutableArray *)magnitudes[arrayIndex] addObject: [NSNumber numberWithFloat: curFreqMagnitude]];
                     
                 }
                 
             }
-    //        printf("Dominant frequency: %f   bin: %d \n", dominantFrequency, bin);
-    //        printf("Dominant frequency: %f   bin: %d \n", bin*(sampleRate/bufferCapacity), bin);
         }
         
         
@@ -332,7 +299,6 @@ float MagnitudeSquared(float x, float y) {
             if (magnitudes) {
                 avg = [[magnitudes[i] valueForKeyPath:@"@avg.floatValue"] floatValue];
             }
-            
 
             CGFloat columnHeight = MIN(1+multiplier*(logf(avg+1)/logf(logBase)), CGRectGetHeight(self.bounds));
             
@@ -367,15 +333,9 @@ float MagnitudeSquared(float x, float y) {
         static BOOL initialState = YES;
         static int initialStateCounter = 0;
         
-
-        
         int numDataPointsPerColumn = 2;
 
-//        NSLog(@"%i", numDataPointsPerColumn);
-        
         CGFloat pixelsPerDataPoint = (rollingPlotColumnWidth+rollingPlotGapWidth)/numDataPointsPerColumn;
-        
-        
         
         if (rollingCounter>=numDataPointsPerColumn-1 && length>numDataPointsPerColumn) {
             float total = 0;
@@ -405,8 +365,6 @@ float MagnitudeSquared(float x, float y) {
             
             float multi = 1/(0.3*columnHeight)+1;
             columnHeight = MIN(columnHeight*multi-2-2, CGRectGetHeight(self.bounds));
-            
-//            NSLog(@"new height: %f", newHeight);
             
             [heightsRolling addObject: [NSNumber numberWithFloat:columnHeight]];
             [heightsRolling removeObjectAtIndex:0];
