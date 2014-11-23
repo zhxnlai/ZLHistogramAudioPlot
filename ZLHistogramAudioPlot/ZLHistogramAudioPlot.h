@@ -12,11 +12,11 @@
 
 #pragma mark - TypeBuffer
 
+@property (nonatomic) float minFrequency;
+@property (nonatomic) float maxFrequency;
+
 @property (nonatomic) CGFloat barChartColumnWidth;
 @property (strong,nonatomic) NSArray *barChartColors;
-@property (strong,nonatomic) NSArray *barChartGrayColors;
-
-@property (nonatomic) BOOL shouldUseGrayColors;
 
 #pragma mark - TypeRolling
 
@@ -26,8 +26,6 @@
 @property (strong,nonatomic) UIColor *rollingPlotSelectedColor;
 
 
-@property (nonatomic) float logBase;
-@property (nonatomic) float multiplier;
 @property (nonatomic) float heightDecendingAcceleration;
 
 @end
