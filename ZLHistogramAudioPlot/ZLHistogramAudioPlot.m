@@ -11,10 +11,13 @@
 #import <Accelerate/Accelerate.h>
 #import "EZAudio.h"
 
+const Float32 kAdjust0DB = 1.5849e-13;
+const float heightsUpdateInterval = 1/60.0;
+
 @interface ZLHistogramAudioPlot() {
     int tick;
     float *dataBuffer;
-//    float *outputBuffer;
+    //    float *outputBuffer;
     size_t bufferCapacity;	// In samples
     size_t index;	// In samples
     
@@ -25,9 +28,6 @@
     float sampleRate;
     float frequency;
     
-    float maxFrequency;
-    float minFrequency;
-
     float *heightDecendingSpeeds;
     float *heightDecendingTimes;
     
@@ -37,12 +37,14 @@
     int     _scrollHistoryIndex;
     UInt32  _scrollHistoryLength;
     BOOL    _changingHistorySize;
-
+    
     int rollingCounter;
     CGFloat rollingOffset;
+    
+    
+    float *heightsBuffer;
+    
 }
-
-@property (strong,nonatomic) NSMutableArray *heightsBuffer;
 
 @property (strong,nonatomic) NSMutableArray *heightsRolling;
 
@@ -50,7 +52,6 @@
 @property (nonatomic) NSUInteger numOfColumnsBuffer;
 @property (nonatomic) NSUInteger numOfColumnsRolling;
 
-@property (strong,nonatomic) NSDate *lastUpdate;
 
 @property (strong,nonatomic) NSTimer *heightDescendTimer;
 
@@ -65,8 +66,6 @@
 @synthesize shouldMirror    = _shouldMirror;
 
 @synthesize barChartColors;
-@synthesize barChartGrayColors;
-@synthesize shouldUseGrayColors;
 @synthesize barChartColumnWidth;
 @synthesize numOfColumnsBuffer;
 
@@ -76,13 +75,8 @@
 @synthesize rollingPlotGapWidth;
 @synthesize numOfColumnsRolling;
 
-@synthesize heightsBuffer;
 @synthesize heightsRolling;
 
-@synthesize logBase;
-@synthesize multiplier;
-
-@synthesize lastUpdate;
 @synthesize heightDecendingAcceleration;
 
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -113,7 +107,7 @@
                        [UIColor colorWithRed:208/255.0 green:221/255.0 blue:38/255.0 alpha:1],
                        ];
     
-    barChartGrayColors = @[
+    NSArray* barChartGrayColors = @[
                            [UIColor colorWithRed:241/255.0 green:242/255.0 blue:242/255.0 alpha:1],
                            [UIColor colorWithRed:230/255.0 green:231/255.0 blue:232/255.0 alpha:1],
                            [UIColor colorWithRed:209/255.0 green:211/255.0 blue:212/255.0 alpha:1],
@@ -138,39 +132,31 @@
     
     _gain = 1000;
     
-    heightsBuffer = [NSMutableArray arrayWithCapacity:numOfColumnsBuffer];
-    for (int i=0; i<numOfColumnsBuffer; i++) {
-        heightsBuffer[i] = [NSNumber numberWithFloat:0];
-    }
+    
+    heightsBuffer = (float *)calloc(sizeof(float), numOfColumnsBuffer);
     
     heightsRolling = [NSMutableArray arrayWithCapacity:numOfColumnsRolling];
     for (int i=0; i<numOfColumnsRolling; i++) {
         heightsRolling[i] = [NSNumber numberWithFloat:0];
     }
     
-    logBase = 2;
-    multiplier = 22;
-    
-    maxFrequency = 10000;
-    minFrequency = 1200;
+    self.maxFrequency = 10000;
+    self.minFrequency = 1200;
     
     [self realFFTSetup];
-    
-    lastUpdate = [NSDate date];
-    
     
     _plotType = EZPlotTypeRolling;
     
     _scrollHistory       = NULL;
     _scrollHistoryLength = kEZAudioPlotDefaultHistoryBufferLength;
-
+    
 }
 
 /* Setup our FFT */
 - (void)realFFTSetup {
     UInt32 maxFrames = 2048;
     dataBuffer = (float*)malloc(maxFrames * sizeof(float));
-//    outputBuffer = (float*)malloc(maxFrames *sizeof(float));
+    //    outputBuffer = (float*)malloc(maxFrames *sizeof(float));
     log2n = log2f(maxFrames);
     n = 1 << log2n;
     assert(n == maxFrames);
@@ -187,9 +173,9 @@
     heightDecendingSpeeds = (float *)calloc(sizeof(int), numOfColumnsBuffer);
     heightDecendingTimes = (float *)calloc(sizeof(int), numOfColumnsBuffer);
     
-    heightDecendingAcceleration = 0.1;
+    heightDecendingAcceleration = 0.1/0.01*heightsUpdateInterval;
     if (self.heightDescendTimer == nil) {
-        self.heightDescendTimer = [NSTimer scheduledTimerWithTimeInterval:0.01 target:self selector:@selector(updateHeights) userInfo:nil repeats:YES];
+        self.heightDescendTimer = [NSTimer scheduledTimerWithTimeInterval:heightsUpdateInterval target:self selector:@selector(updateHeights) userInfo:nil repeats:YES];
     }
 }
 -(void)dealloc {
@@ -199,42 +185,51 @@
         free(plotData);
     }
 }
-float MagnitudeSquared(float x, float y) {
-    return ((x*x) + (y*y));
+
+void printFloatArray(float * array, int length, NSString *prefix) {
+    NSMutableString *str = [NSMutableString string];
+    for (int i=0; i<length; i++) {
+        [str appendFormat:@"%f ", array[i]];
+    }
+    NSLog(@"%@ %@", prefix, str);
 }
 
 -(void)updateHeights {
     if (heightsBuffer && _plotType == EZPlotTypeBuffer) {
-        for(NSUInteger i=0;i<numOfColumnsBuffer;i++) {
-            CGFloat previousHeight = [heightsBuffer[i] floatValue];
-            
-            CGFloat timeIncrement = 0.01;
-            heightDecendingTimes[i] = MAX(heightDecendingTimes[i]+timeIncrement, 1.5);
-            
-            heightDecendingSpeeds[i] = MIN(MAX(heightDecendingSpeeds[i]+heightDecendingAcceleration*powf(heightDecendingTimes[i], 2), 0.1), 5);
-            
-            CGFloat newHeight = MAX(0,previousHeight-heightDecendingSpeeds[i]);
-            
-            heightsBuffer[i] = [NSNumber numberWithFloat:newHeight];
-        }
+        vDSP_vsadd(heightDecendingTimes, 1, &heightsUpdateInterval, heightDecendingTimes, 1, numOfColumnsBuffer);
+        
+        static const float timeMin = 1.5, timeMax = 10;
+        vDSP_vclip(heightDecendingTimes, 1, &timeMin, &timeMax, heightDecendingTimes, 1, numOfColumnsBuffer);
+        
+        vDSP_vsma(heightDecendingTimes, 1, &heightDecendingAcceleration, heightDecendingSpeeds, 1, heightDecendingSpeeds, 1, numOfColumnsBuffer);
+        
+        
+        float *tSqrt = (float *)calloc(sizeof(float), numOfColumnsBuffer);
+        vDSP_vsq(heightDecendingTimes, 1, tSqrt, 1, numOfColumnsBuffer);
+        float *vt = (float *)calloc(sizeof(float), numOfColumnsBuffer);
+        vDSP_vmul(heightDecendingSpeeds, 1, heightDecendingTimes, 1, vt, 1, numOfColumnsBuffer);
+        
+        float aOver2 = heightDecendingAcceleration/2;
+        float *deltaHeight = (float *)calloc(sizeof(float), numOfColumnsBuffer);
+        vDSP_vsma(tSqrt, 1, &aOver2, vt, 1, deltaHeight, 1, numOfColumnsBuffer);
+        vDSP_vneg(deltaHeight, 1, deltaHeight, 1, numOfColumnsBuffer);
+        
+        vDSP_vadd(heightsBuffer, 1, deltaHeight, 1, heightsBuffer, 1, numOfColumnsBuffer);
+        
+        free(tSqrt);
+        free(vt);
+        free(deltaHeight);
     }
-    
-    
 }
 
 -(void)setSampleData:(float *)data
               length:(int)length {
-    
     int requiredTickes = 1; // Alter this to draw more or less often
     tick = (tick+1)%requiredTickes;
     
-    
     if (_plotType == EZPlotTypeBuffer) {
-
-        NSMutableArray *magnitudes = nil;
-
         uint32_t stride = 1;
-
+        
         // Fill the buffer with our sampled data. If we fill our buffer, run the
         // fft.
         int inNumberFrames = length;
@@ -249,7 +244,7 @@ float MagnitudeSquared(float x, float y) {
             
             // Reset the index.
             index = 0;
-
+            
             /*************** FFT ***************/
             /**
              Look at the real signal as an interleaved complex vector by casting it.
@@ -264,60 +259,33 @@ float MagnitudeSquared(float x, float y) {
             // The output signal is now in a split real form. Use the vDSP_ztoc to get
             // a split real vector.
             vDSP_ztoc(&A, 1, (COMPLEX *)dataBuffer, 2, nOver2);
-
+            Float32 one = 1;
             
-            magnitudes = [[NSMutableArray alloc] initWithCapacity:numOfColumnsBuffer];
-            for (int i=0; i<numOfColumnsBuffer; i++) {
-                magnitudes[i] = [[NSMutableArray alloc] init];
-            }
+            // counvert to dB
+            vDSP_vsq(dataBuffer, 1, dataBuffer, 1, inNumberFrames);
+            vDSP_vsadd(dataBuffer, 1, &kAdjust0DB, dataBuffer, 1, inNumberFrames);
+            vDSP_vdbcon(dataBuffer, 1, &one, dataBuffer, 1, inNumberFrames, 0);
             
-            // Determine the dominant frequency by taking the magnitude squared and
-            // saving the bin which it resides in.
-            int bin = -1;
-            for (int i=0; i<n; i+=2) {
-
-                float curFreqMagnitude = MagnitudeSquared(dataBuffer[i], dataBuffer[i+1]);
-                bin = (i+1)/2;
-                float curFreqInHz = bin*(sampleRate/bufferCapacity);
+            float mul = (sampleRate/bufferCapacity)/2;
+            int minFrequencyIndex = self.minFrequency/mul;
+            int maxFrequencyIndex = self.maxFrequency/mul;
+            int numDataPointsPerColumn = (maxFrequencyIndex-minFrequencyIndex)/numOfColumnsBuffer;
+            
+            for(NSUInteger i=0;i<numOfColumnsBuffer;i++) {
+                float avg = 0;
+                vDSP_meanv(dataBuffer+minFrequencyIndex+i*numDataPointsPerColumn, 1, &avg, numDataPointsPerColumn);
                 
-                if (curFreqInHz>minFrequency && curFreqInHz<maxFrequency) {
-                    float percent = (curFreqInHz-minFrequency)/(maxFrequency-minFrequency);
-                    float width = 1.0/numOfColumnsBuffer;
-                    int arrayIndex = percent/width;
-
-                    [(NSMutableArray *)magnitudes[arrayIndex] addObject: [NSNumber numberWithFloat: curFreqMagnitude]];
-                    
+                CGFloat columnHeight = MIN(avg*10, CGRectGetHeight(self.bounds));
+                CGFloat previousHeight = heightsBuffer[i];
+                
+                CGFloat newHeight = MAX(columnHeight, previousHeight);
+                if (columnHeight>previousHeight) {
+                    heightDecendingSpeeds[i] = 0;
+                    heightDecendingTimes[i] = 0;
                 }
                 
+                heightsBuffer[i] = newHeight;
             }
-        }
-        
-        
-        for(NSUInteger i=0;i<numOfColumnsBuffer;i++) {
-            
-            CGFloat avg = 0;
-            if (magnitudes) {
-                avg = [[magnitudes[i] valueForKeyPath:@"@avg.floatValue"] floatValue];
-            }
-
-            CGFloat columnHeight = MIN(1+multiplier*(logf(avg+1)/logf(logBase)), CGRectGetHeight(self.bounds));
-            
-            float multi = 1/(0.3*columnHeight)+1;
-            columnHeight = MIN(columnHeight*multi-2, CGRectGetHeight(self.bounds));
-
-            CGFloat previousHeight = [heightsBuffer[i] floatValue];
-
-            CGFloat newHeight = 0;
-            if (columnHeight>previousHeight) {
-                newHeight = columnHeight;
-                heightDecendingSpeeds[i] = 0;
-                heightDecendingTimes[i] = 0;
-            } else {
-                newHeight = previousHeight;
-                
-            }
-
-            heightsBuffer[i] = [NSNumber numberWithFloat:newHeight];
             
         }
     }
@@ -334,7 +302,7 @@ float MagnitudeSquared(float x, float y) {
         static int initialStateCounter = 0;
         
         int numDataPointsPerColumn = 2;
-
+        
         CGFloat pixelsPerDataPoint = (rollingPlotColumnWidth+rollingPlotGapWidth)/numDataPointsPerColumn;
         
         if (rollingCounter>=numDataPointsPerColumn-1 && length>numDataPointsPerColumn) {
@@ -347,7 +315,6 @@ float MagnitudeSquared(float x, float y) {
                         max = data[j];
                     }
                 }
-
             } else {
                 for (int j=length-numDataPointsPerColumn; j<length; j++) {
                     total += data[j];
@@ -356,12 +323,12 @@ float MagnitudeSquared(float x, float y) {
                     }
                 }
             }
-
             
             float avg = total/numDataPointsPerColumn;
             float newHeight = avg*_gain/50;
             
-            CGFloat columnHeight = MIN(1+multiplier*(logf(newHeight+1)/logf(logBase)), CGRectGetHeight(self.bounds));
+            // TODO: convert to dB
+            CGFloat columnHeight = MIN(newHeight, CGRectGetHeight(self.bounds));
             
             float multi = 1/(0.3*columnHeight)+1;
             columnHeight = MIN(columnHeight*multi-2-2, CGRectGetHeight(self.bounds));
@@ -374,26 +341,18 @@ float MagnitudeSquared(float x, float y) {
         }
         
         rollingOffset = pixelsPerDataPoint*rollingCounter;
-
+        
         initialStateCounter++;
         initialState = initialStateCounter<length;
-
-
     }
     
-    
     if (tick==0) {
-        
         [self _refreshDisplay];
-        //        NSLog(@"drwaing");
-    } else {
-        //        NSLog(@"not drwaing");
     }
 }
 #pragma mark - Update
 -(void)updateBuffer:(float *)buffer withBufferSize:(UInt32)bufferSize {
     if( _plotType == EZPlotTypeRolling ){
-        
         // Update the scroll history datasource
         [EZAudio updateScrollHistory:&_scrollHistory
                           withLength:_scrollHistoryLength
@@ -402,22 +361,17 @@ float MagnitudeSquared(float x, float y) {
                       withBufferSize:bufferSize
                 isResolutionChanging:&_changingHistorySize];
         
-        //
         [self setSampleData:_scrollHistory
                      length:(!_setMaxLength?kEZAudioPlotMaxHistoryBufferLength:_scrollHistoryLength)];
         _setMaxLength = YES;
-        
     }
     else if( _plotType == EZPlotTypeBuffer ){
         
         [self setSampleData:buffer
                      length:bufferSize];
-        
     }
     else {
-        
         // Unknown plot type
-        
     }
 }
 
@@ -446,28 +400,25 @@ float MagnitudeSquared(float x, float y) {
     return _scrollHistoryLength;
 }
 
-
 - (void)drawRect:(CGRect)rect
 {
     CGContextRef ctx = UIGraphicsGetCurrentContext();
     CGContextSaveGState(ctx);
     CGRect frame = self.bounds;
     
-    
     // Set the background color
     [(UIColor*)self.backgroundColor set];
     UIRectFill(frame);
     // Set the waveform line color
     [(UIColor*)self.color set];
-    //
-
+    
     if (_plotType == EZPlotTypeBuffer) {
         for(NSUInteger i=0;i<numOfColumnsBuffer;i++) {
-            CGFloat columnHeight = [heightsBuffer[i] floatValue];
+            CGFloat columnHeight = heightsBuffer[i];
             CGFloat columnX = i*barChartColumnWidth;
             UIBezierPath* rectanglePath = [UIBezierPath bezierPathWithRect: CGRectMake(columnX, CGRectGetHeight(frame)-columnHeight, barChartColumnWidth, columnHeight)];
             
-            NSArray *colorSet = shouldUseGrayColors? barChartGrayColors : barChartColors ;
+            NSArray *colorSet = barChartColors ;
             UIColor *color = [colorSet objectAtIndex:i%colorSet.count];
             if (_plotType == EZPlotTypeRolling) {
                 color = [UIColor grayColor];
@@ -476,7 +427,7 @@ float MagnitudeSquared(float x, float y) {
             [rectanglePath fill];
         }
     }
-
+    
     if (_plotType == EZPlotTypeRolling) {
         for(NSUInteger i=0;i<numOfColumnsRolling;i++) {
             CGFloat columnHeight = [heightsRolling[i] floatValue];
@@ -488,7 +439,6 @@ float MagnitudeSquared(float x, float y) {
             [color setFill];
             [rectanglePath fill];
         }
-
     }
     CGContextRestoreGState(ctx);
 }
