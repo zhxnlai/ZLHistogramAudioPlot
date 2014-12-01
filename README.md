@@ -3,6 +3,8 @@ ZLHistogramAudioPlot
 
 A hardware-accelerated audio visualization view using EZAudio, inspired by [AudioCopy](https://itunes.apple.com/us/app/audiocopy/id719137307?mt=8).
 
+#Work in progress
+
 Preview
 ---
 
