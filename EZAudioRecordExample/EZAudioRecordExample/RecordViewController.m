@@ -17,6 +17,8 @@
 @property (nonatomic,weak) IBOutlet UILabel *playingTextField;
 @property (nonatomic,weak) IBOutlet UISwitch *recordSwitch;
 @property (nonatomic,weak) IBOutlet UILabel *recordingTextField;
+@property (weak, nonatomic) IBOutlet UILabel *numOfBinsLabel;
+@property (weak, nonatomic) IBOutlet UILabel *paddingLabel;
 @end
 
 @implementation RecordViewController
@@ -66,7 +68,7 @@
   // Background color
   self.audioPlot.backgroundColor = [UIColor colorWithRed: 0.984 green: 0.71 blue: 0.365 alpha: 1];
   // Waveform color
-  self.audioPlot.color           = [UIColor colorWithRed:1.0 green:1.0 blue:1.0 alpha:1.0];
+  //  self.audioPlot.color           = [UIColor colorWithRed:1.0 green:1.0 blue:1.0 alpha:1.0];
   // Plot type
   self.audioPlot.plotType        = EZPlotTypeBuffer;
   // Fill
@@ -74,6 +76,21 @@
   // Mirror
   self.audioPlot.shouldMirror    = YES;
   
+    // barChartColors = @[[UIColor colorWithRed:1 green:0.467 blue:0 alpha:1], [UIColor blackColor], [UIColor colorWithRed:0.157 green:0.6 blue:0.765 alpha:1], [UIColor colorWithRed:0.125 green:0.675 blue:0.910 alpha:1], [UIColor colorWithRed:0.310 green:0.765 blue:0.341 alpha:1]];
+    
+    
+    //    NSArray* barChartGrayColors = @[
+    //                           [UIColor colorWithRed:241/255.0 green:242/255.0 blue:242/255.0 alpha:1],
+    //                           [UIColor colorWithRed:230/255.0 green:231/255.0 blue:232/255.0 alpha:1],
+    //                           [UIColor colorWithRed:209/255.0 green:211/255.0 blue:212/255.0 alpha:1],
+    //                           [UIColor colorWithRed:188/255.0 green:190/255.0 blue:192/255.0 alpha:1],
+    //                           [UIColor colorWithRed:167/255.0 green:169/255.0 blue:172/255.0 alpha:1],
+    //                           [UIColor colorWithRed:147/255.0 green:149/255.0 blue:152/255.0 alpha:1],
+    //                           [UIColor colorWithRed:128/255.0 green:130/255.0 blue:133/255.0 alpha:1],
+    //                           ];
+ 
+    [self setNumOfBins:self.audioPlot.numOfBins];
+    
   /*
    Start the microphone
    */
@@ -129,6 +146,20 @@
     self.audioPlayer.delegate = self;
     self.playingTextField.text = @"Playing";
   
+}
+
+- (IBAction)changeAudioPlotType:(UISegmentedControl *)sender {
+    self.audioPlot.plotType = sender.selectedSegmentIndex==0 ? EZPlotTypeBuffer : EZPlotTypeRolling;
+}
+
+- (IBAction)changeAudioPlotNumOfBins:(UISlider *)sender {
+    self.audioPlot.numOfBins = 10+sender.value*20;
+    [self setNumOfBins:self.audioPlot.numOfBins];
+}
+
+- (IBAction)changePadding:(UISlider *)sender {
+    self.audioPlot.padding = sender.value/2;
+    [self setPadding:self.audioPlot.padding];
 }
 
 -(void)toggleMicrophone:(id)sender {
@@ -239,4 +270,11 @@ withNumberOfChannels:(UInt32)numberOfChannels {
                                  kAudioFilePath]];
 }
 
+-(void)setNumOfBins:(NSInteger)num {
+    self.numOfBinsLabel.text = [NSString stringWithFormat:@"NumOfBins: %li", (long)num];
+}
+
+-(void)setPadding:(CGFloat)padding {
+    self.paddingLabel.text = [NSString stringWithFormat:@"Padding: %.02f", padding];
+}
 @end
