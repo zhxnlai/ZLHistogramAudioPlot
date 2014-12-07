@@ -22,7 +22,7 @@
 /// The padding of the bins in percent. Default: 0.1
 @property (nonatomic) CGFloat padding;
 
-/// The gain applied the heights of bins. Default: 10
+/// The gain applied to the heights of bins. Default: 10
 @property (nonatomic) CGFloat gain;
 
 /// A float that specifies the vertical gravitational acceleration applied to bins in the audio plot. Default: 10 pixel/s^2
