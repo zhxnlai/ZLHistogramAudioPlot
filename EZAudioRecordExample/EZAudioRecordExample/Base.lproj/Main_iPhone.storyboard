@@ -77,13 +77,13 @@
                                                 </connections>
                                             </segmentedControl>
                                             <slider opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="xUq-Cy-2Rk">
-                                                <rect key="frame" x="142" y="73" width="164" height="31"/>
+                                                <rect key="frame" x="142" y="103" width="164" height="31"/>
                                                 <connections>
                                                     <action selector="changeAudioPlotNumOfBins:" destination="VkE-dw-grN" eventType="valueChanged" id="9C4-lh-gf8"/>
                                                 </connections>
                                             </slider>
                                             <slider opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.20000000000000001" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="hzG-Jp-whj">
-                                                <rect key="frame" x="142" y="111" width="164" height="31"/>
+                                                <rect key="frame" x="142" y="141" width="164" height="31"/>
                                                 <connections>
                                                     <action selector="changePadding:" destination="VkE-dw-grN" eventType="valueChanged" id="zFa-Co-pI1"/>
                                                 </connections>
@@ -94,18 +94,34 @@
                                                 <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Colors" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ZwD-Id-MRf">
+                                                <rect key="frame" x="8" y="70" width="51" height="21"/>
+                                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                                                <nil key="highlightedColor"/>
+                                            </label>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="NumOfBins: 30" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5zb-TA-9i6">
-                                                <rect key="frame" x="8" y="77" width="128" height="21"/>
+                                                <rect key="frame" x="8" y="107" width="128" height="21"/>
                                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                 <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Padding: 0.1" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="TZk-1X-kOE">
-                                                <rect key="frame" x="8" y="115" width="128" height="21"/>
+                                                <rect key="frame" x="8" y="145" width="128" height="21"/>
                                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                 <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
+                                            <segmentedControl opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="UhC-R9-5EZ">
+                                                <rect key="frame" x="144" y="67" width="160" height="29"/>
+                                                <segments>
+                                                    <segment title="Murmur"/>
+                                                    <segment title="AudioCopy"/>
+                                                </segments>
+                                                <connections>
+                                                    <action selector="changeColors:" destination="VkE-dw-grN" eventType="valueChanged" id="QOj-Xx-Zkv"/>
+                                                </connections>
+                                            </segmentedControl>
                                         </subviews>
                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                     </view>

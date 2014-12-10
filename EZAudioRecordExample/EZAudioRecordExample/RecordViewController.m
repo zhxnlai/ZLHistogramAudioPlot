@@ -19,6 +19,9 @@
 @property (nonatomic,weak) IBOutlet UILabel *recordingTextField;
 @property (weak, nonatomic) IBOutlet UILabel *numOfBinsLabel;
 @property (weak, nonatomic) IBOutlet UILabel *paddingLabel;
+
+@property (strong, nonatomic) NSArray *murmurColors;
+@property (strong, nonatomic) NSArray *audioCopyColors;
 @end
 
 @implementation RecordViewController
@@ -34,19 +37,19 @@
 
 #pragma mark - Initialization
 -(id)init {
-  self = [super init];
-  if(self){
-    [self initializeViewController];
-  }
-  return self;
+    self = [super init];
+    if(self){
+        [self initializeViewController];
+    }
+    return self;
 }
 
 -(id)initWithCoder:(NSCoder *)aDecoder {
-  self = [super initWithCoder:aDecoder];
-  if(self){
-    [self initializeViewController];
-  }
-  return self;
+    self = [super initWithCoder:aDecoder];
+    if(self){
+        [self initializeViewController];
+    }
+    return self;
 }
 
 #pragma mark - Initialize View Controller Here
@@ -59,70 +62,76 @@
 
 #pragma mark - Customize the Audio Plot
 -(void)viewDidLoad {
-  
-  [super viewDidLoad];
-  
-  /*
-   Customizing the audio plot's look
-   */
-  // Background color
-  self.audioPlot.backgroundColor = [UIColor colorWithRed: 0.984 green: 0.71 blue: 0.365 alpha: 1];
-  // Waveform color
-  //  self.audioPlot.color           = [UIColor colorWithRed:1.0 green:1.0 blue:1.0 alpha:1.0];
-  // Plot type
-  self.audioPlot.plotType        = EZPlotTypeBuffer;
-  // Fill
-  self.audioPlot.shouldFill      = YES;
-  // Mirror
-  self.audioPlot.shouldMirror    = YES;
-  
-    // barChartColors = @[[UIColor colorWithRed:1 green:0.467 blue:0 alpha:1], [UIColor blackColor], [UIColor colorWithRed:0.157 green:0.6 blue:0.765 alpha:1], [UIColor colorWithRed:0.125 green:0.675 blue:0.910 alpha:1], [UIColor colorWithRed:0.310 green:0.765 blue:0.341 alpha:1]];
     
+    [super viewDidLoad];
     
-    //    NSArray* barChartGrayColors = @[
-    //                           [UIColor colorWithRed:241/255.0 green:242/255.0 blue:242/255.0 alpha:1],
-    //                           [UIColor colorWithRed:230/255.0 green:231/255.0 blue:232/255.0 alpha:1],
-    //                           [UIColor colorWithRed:209/255.0 green:211/255.0 blue:212/255.0 alpha:1],
-    //                           [UIColor colorWithRed:188/255.0 green:190/255.0 blue:192/255.0 alpha:1],
-    //                           [UIColor colorWithRed:167/255.0 green:169/255.0 blue:172/255.0 alpha:1],
-    //                           [UIColor colorWithRed:147/255.0 green:149/255.0 blue:152/255.0 alpha:1],
-    //                           [UIColor colorWithRed:128/255.0 green:130/255.0 blue:133/255.0 alpha:1],
-    //                           ];
- 
+    /*
+     Customizing the audio plot's look
+     */
+    // Background color
+    self.audioPlot.backgroundColor = [UIColor colorWithRed: 0.984 green: 0.71 blue: 0.365 alpha: 1];
+    // 250.92 181.05 93.075
+    // Waveform color
+    //  self.audioPlot.color           = [UIColor colorWithRed:1.0 green:1.0 blue:1.0 alpha:1.0];
+    // Plot type
+    self.audioPlot.plotType        = EZPlotTypeBuffer;
+    // Fill
+    self.audioPlot.shouldFill      = YES;
+    // Mirror
+    self.audioPlot.shouldMirror    = YES;
+    
+    self.murmurColors =     @[[UIColor colorWithRed:242/255.0 green:128/255.0 blue:78/255.0 alpha:1],
+                        [UIColor colorWithRed:40/255.0 green:56/255.0 blue:72/255.0 alpha:1],
+                        [UIColor colorWithRed:244/255.0 green:234/255.0 blue:119/255.0 alpha:1],
+                        [UIColor colorWithRed:255/255.0 green:197/255.0 blue:69/255.0 alpha:1],
+                        [UIColor colorWithRed:193/255.0 green:75/255.0 blue:43/255.0 alpha:1],
+                        [UIColor colorWithRed:40/255.0 green:181/255.0 blue:164/255.0 alpha:1],
+                        [UIColor colorWithRed:208/255.0 green:221/255.0 blue:38/255.0 alpha:1],
+                        ];
+
+    self.audioCopyColors = @[[UIColor colorWithRed:1 green:0.467 blue:0 alpha:1],
+                                         [UIColor blackColor],
+                                         [UIColor colorWithRed:0.157 green:0.6 blue:0.765 alpha:1],
+                                         [UIColor colorWithRed:0.125 green:0.675 blue:0.910 alpha:1],
+                                         [UIColor colorWithRed:0.310 green:0.765 blue:0.341 alpha:1]];
+    
+    self.audioPlot.colors = self.murmurColors;
+    self.audioPlot.color = [UIColor colorWithWhite:0.598 alpha:1.000];
+    
     [self setNumOfBins:self.audioPlot.numOfBins];
     
-  /*
-   Start the microphone
-   */
-  [self.microphone startFetchingAudio];
-  self.microphoneTextField.text = @"Microphone On";
-  self.recordingTextField.text = @"Not Recording";
-  self.playingTextField.text = @"Not Playing";
-  
-  // Hide the play button
-  self.playButton.hidden = YES;
-  
-  /*
-   Log out where the file is being written to within the app's documents directory
-   */
-  NSLog(@"File written to application sandbox's documents directory: %@",[self testFilePathURL]);
-  
+    /*
+     Start the microphone
+     */
+    [self.microphone startFetchingAudio];
+    self.microphoneTextField.text = @"Microphone On";
+    self.recordingTextField.text = @"Not Recording";
+    self.playingTextField.text = @"Not Playing";
+    
+    // Hide the play button
+    self.playButton.hidden = YES;
+    
+    /*
+     Log out where the file is being written to within the app's documents directory
+     */
+    NSLog(@"File written to application sandbox's documents directory: %@",[self testFilePathURL]);
+    
 }
 
 #pragma mark - Actions
 -(void)playFile:(id)sender
 {
-
+    
     // Update microphone state
     [self.microphone stopFetchingAudio];
     self.microphoneTextField.text = @"Microphone Off";
     self.microphoneSwitch.on = NO;
-
+    
     // Update recording state
     self.isRecording = NO;
     self.recordingTextField.text = @"Not Recording";
     self.recordSwitch.on = NO;
-
+    
     // Create Audio Player
     if( self.audioPlayer )
     {
@@ -132,28 +141,32 @@
         }
         self.audioPlayer = nil;
     }
-
+    
     // Close the audio file
     if( self.recorder )
     {
         [self.recorder closeAudioFile];
     }
-
+    
     NSError *err;
     self.audioPlayer = [[AVAudioPlayer alloc] initWithContentsOfURL:[self testFilePathURL]
-                                                            error:&err];
+                                                              error:&err];
     [self.audioPlayer play];
     self.audioPlayer.delegate = self;
     self.playingTextField.text = @"Playing";
-  
+    
 }
 
 - (IBAction)changeAudioPlotType:(UISegmentedControl *)sender {
     self.audioPlot.plotType = sender.selectedSegmentIndex==0 ? EZPlotTypeBuffer : EZPlotTypeRolling;
 }
 
+- (IBAction)changeColors:(UISegmentedControl *)sender {
+    self.audioPlot.colors = sender.selectedSegmentIndex==0 ? self.murmurColors : self.audioCopyColors;
+}
+
 - (IBAction)changeAudioPlotNumOfBins:(UISlider *)sender {
-    self.audioPlot.numOfBins = 10+sender.value*20;
+    self.audioPlot.numOfBins = 0+sender.value*30;
     [self setNumOfBins:self.audioPlot.numOfBins];
 }
 
@@ -163,25 +176,25 @@
 }
 
 -(void)toggleMicrophone:(id)sender {
-  
-  self.playingTextField.text = @"Not Playing";
-  if( self.audioPlayer ){
-    if( self.audioPlayer.playing ) [self.audioPlayer stop];
-    self.audioPlayer = nil;
-  }
-  
-  if( ![(UISwitch*)sender isOn] ){
-    [self.microphone stopFetchingAudio];
-    self.microphoneTextField.text = @"Microphone Off";
-  }
-  else {
-    [self.microphone startFetchingAudio];
-    self.microphoneTextField.text = @"Microphone On";
-  }
+    
+    self.playingTextField.text = @"Not Playing";
+    if( self.audioPlayer ){
+        if( self.audioPlayer.playing ) [self.audioPlayer stop];
+        self.audioPlayer = nil;
+    }
+    
+    if( ![(UISwitch*)sender isOn] ){
+        [self.microphone stopFetchingAudio];
+        self.microphoneTextField.text = @"Microphone Off";
+    }
+    else {
+        [self.microphone startFetchingAudio];
+        self.microphoneTextField.text = @"Microphone On";
+    }
 }
 
 -(void)toggleRecording:(id)sender {
-  
+    
     self.playingTextField.text = @"Not Playing";
     if( self.audioPlayer )
     {
@@ -217,26 +230,26 @@
  hasAudioReceived:(float **)buffer
    withBufferSize:(UInt32)bufferSize
 withNumberOfChannels:(UInt32)numberOfChannels {
-  // Getting audio data as an array of float buffer arrays. What does that mean? Because the audio is coming in as a stereo signal the data is split into a left and right channel. So buffer[0] corresponds to the float* data for the left channel while buffer[1] corresponds to the float* data for the right channel.
-  
-  // See the Thread Safety warning above, but in a nutshell these callbacks happen on a separate audio thread. We wrap any UI updating in a GCD block on the main thread to avoid blocking that audio flow.
-  dispatch_async(dispatch_get_main_queue(),^{
-    // All the audio plot needs is the buffer data (float*) and the size. Internally the audio plot will handle all the drawing related code, history management, and freeing its own resources. Hence, one badass line of code gets you a pretty plot :)
-    [self.audioPlot updateBuffer:buffer[0] withBufferSize:bufferSize];
-  });
+    // Getting audio data as an array of float buffer arrays. What does that mean? Because the audio is coming in as a stereo signal the data is split into a left and right channel. So buffer[0] corresponds to the float* data for the left channel while buffer[1] corresponds to the float* data for the right channel.
+    
+    // See the Thread Safety warning above, but in a nutshell these callbacks happen on a separate audio thread. We wrap any UI updating in a GCD block on the main thread to avoid blocking that audio flow.
+    dispatch_async(dispatch_get_main_queue(),^{
+        // All the audio plot needs is the buffer data (float*) and the size. Internally the audio plot will handle all the drawing related code, history management, and freeing its own resources. Hence, one badass line of code gets you a pretty plot :)
+        [self.audioPlot updateBuffer:buffer[0] withBufferSize:bufferSize];
+    });
 }
 
 -(void)microphone:(EZMicrophone *)microphone
     hasBufferList:(AudioBufferList *)bufferList
    withBufferSize:(UInt32)bufferSize
 withNumberOfChannels:(UInt32)numberOfChannels {
-  
-  // Getting audio data as a buffer list that can be directly fed into the EZRecorder. This is happening on the audio thread - any UI updating needs a GCD main queue block. This will keep appending data to the tail of the audio file.
-  if( self.isRecording ){
-    [self.recorder appendDataFromBufferList:bufferList
-                             withBufferSize:bufferSize];
-  }
-  
+    
+    // Getting audio data as a buffer list that can be directly fed into the EZRecorder. This is happening on the audio thread - any UI updating needs a GCD main queue block. This will keep appending data to the tail of the audio file.
+    if( self.isRecording ){
+        [self.recorder appendDataFromBufferList:bufferList
+                                 withBufferSize:bufferSize];
+    }
+    
 }
 
 #pragma mark - AVAudioPlayerDelegate
@@ -244,30 +257,30 @@ withNumberOfChannels:(UInt32)numberOfChannels {
  Occurs when the audio player instance completes playback
  */
 -(void)audioPlayerDidFinishPlaying:(AVAudioPlayer *)player successfully:(BOOL)flag {
-  self.audioPlayer = nil;
-  self.playingTextField.text = @"Finished Playing";
-  
-  [self.microphone startFetchingAudio];
-  self.microphoneSwitch.on = YES;
-  self.microphoneTextField.text = @"Microphone On";
+    self.audioPlayer = nil;
+    self.playingTextField.text = @"Finished Playing";
+    
+    [self.microphone startFetchingAudio];
+    self.microphoneSwitch.on = YES;
+    self.microphoneTextField.text = @"Microphone On";
 }
 
 #pragma mark - Utility
 -(NSArray*)applicationDocuments {
-  return NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    return NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
 }
 
 -(NSString*)applicationDocumentsDirectory
 {
-  NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-  NSString *basePath = ([paths count] > 0) ? [paths objectAtIndex:0] : nil;
-  return basePath;
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *basePath = ([paths count] > 0) ? [paths objectAtIndex:0] : nil;
+    return basePath;
 }
 
 -(NSURL*)testFilePathURL {
-  return [NSURL fileURLWithPath:[NSString stringWithFormat:@"%@/%@",
-                                 [self applicationDocumentsDirectory],
-                                 kAudioFilePath]];
+    return [NSURL fileURLWithPath:[NSString stringWithFormat:@"%@/%@",
+                                   [self applicationDocumentsDirectory],
+                                   kAudioFilePath]];
 }
 
 -(void)setNumOfBins:(NSInteger)num {

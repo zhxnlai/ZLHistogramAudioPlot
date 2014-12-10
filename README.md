@@ -12,6 +12,13 @@ Preview
 ###Rolling
 ![preview rolling](Previews/ZLHistogramAudioPlotRolling.gif)
 
+
+CocoaPods
+---
+You can install `ZLHistogramAudioPlot` through CocoaPods adding the following to your Podfile:
+
+    pod 'ZLHistogramAudioPlot'
+
 Usage
 ---
 Checkout the [demo app](https://github.com/zhxnlai/ZLHistogramAudioPlot/tree/master/EZAudioRecordExample) for an example.
@@ -47,6 +54,19 @@ Dependencies
 ---
 - ZLHistogramAudioPlot is a subclass of `EZAudioPlot`. It requires [EZAudio](https://github.com/syedhali/EZAudio).
 - It also requires [Accelerate](https://developer.apple.com/library/ios/documentation/Accelerate/Reference/AccelerateFWRef/_index.html) framework for hardware acceleration.
+
+Compatibilty
+---
+`ZLHistogramAudioPlot` uses the following interface provided by [EZAudio](https://github.com/syedhali/EZAudio) to get audio data:
+~~~objective-c
+- (void)updateBuffer:(float *)buffer withBufferSize:(UInt32)bufferSize;
+~~~
+It can be easily modified to work with [Audio Unit](https://developer.apple.com/library/mac/documentation/MusicAudio/Conceptual/AudioUnitProgrammingGuide/Introduction/Introduction.html) and [Core Audio](https://developer.apple.com/library/mac/documentation/MusicAudio/Conceptual/CoreAudioOverview/Introduction/Introduction.html).
+
+Requirements
+---
+- iOS 6 or higher.
+- Automatic Reference Counting (ARC).
 
 License
 ---

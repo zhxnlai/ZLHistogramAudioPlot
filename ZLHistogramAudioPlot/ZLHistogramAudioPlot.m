@@ -7,7 +7,6 @@
 //
 
 #import "ZLHistogramAudioPlot.h"
-#import <math.h>
 #import <Accelerate/Accelerate.h>
 #import "EZAudio.h"
 
@@ -63,7 +62,7 @@ const float kTimerDelay = 1/60.0; //Alter this to draw more or less often
     self.padding = 1/10.0;
     self.gain = 10;
     self.gravity = 10*kTimerDelay;
-    self.color = [UIColor grayColor];
+    self.color = [UIColor lightGrayColor];
     self.colors =     @[[UIColor colorWithRed:242/255.0 green:128/255.0 blue:78/255.0 alpha:1],
                         [UIColor colorWithRed:40/255.0 green:56/255.0 blue:72/255.0 alpha:1],
                         [UIColor colorWithRed:244/255.0 green:234/255.0 blue:119/255.0 alpha:1],
@@ -106,7 +105,7 @@ const float kTimerDelay = 1/60.0; //Alter this to draw more or less often
 
 #pragma mark - Properties
 - (void)setNumOfBins:(NSUInteger)someNumOfBins {
-    numOfBins = someNumOfBins;
+    numOfBins = MAX(1,someNumOfBins);
     
     // reset buffers
     [self freeBuffersIfNeeded];
@@ -168,10 +167,11 @@ const float kTimerDelay = 1/60.0; //Alter this to draw more or less often
         vDSP_ztoc(&A, 1, (COMPLEX *)dataBuffer, 2, nOver2);
         
         // convert to dB
-        Float32 one = 1;
+        Float32 one = 1, zero = 0;
         vDSP_vsq(dataBuffer, 1, dataBuffer, 1, inNumberFrames);
         vDSP_vsadd(dataBuffer, 1, &kAdjust0DB, dataBuffer, 1, inNumberFrames);
         vDSP_vdbcon(dataBuffer, 1, &one, dataBuffer, 1, inNumberFrames, 0);
+        vDSP_vthr(dataBuffer, 1, &zero, dataBuffer, 1, inNumberFrames);
         
         float mul = (sampleRate/bufferCapacity)/2;
         int minFrequencyIndex = self.minFrequency/mul;
@@ -216,7 +216,7 @@ const float kTimerDelay = 1/60.0; //Alter this to draw more or less often
     [(UIColor*)self.backgroundColor set];
     UIRectFill(frame);
     
-    CGFloat columnWidth = rect.size.width/numOfBins;
+    CGFloat columnWidth = rect.size.width/(_plotType==EZPlotTypeBuffer?numOfBins:numOfBins-1);
     CGFloat actualWidth = MAX(1, columnWidth*(1-2*self.padding));
     CGFloat actualPadding = (columnWidth-actualWidth)/2;
     // TODO: warning: padding is larger than width
@@ -244,7 +244,7 @@ const float kTimerDelay = 1/60.0; //Alter this to draw more or less often
 }
 
 #pragma mark - ()
-void printFloatArray(float * array, int length, NSString *prefix) {
+void printFloatArray(float *array, int length, NSString *prefix) {
     NSMutableString *str = [NSMutableString string];
     for (int i=0; i<length; i++) {
         [str appendFormat:@"%f ", array[i]];
