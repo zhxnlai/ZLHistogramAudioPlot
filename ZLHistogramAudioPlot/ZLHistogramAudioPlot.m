@@ -11,30 +11,20 @@
 #import <Accelerate/Accelerate.h>
 #import "EZAudio.h"
 
+const UInt32 kMaxFrames = 2048;
 const Float32 kAdjust0DB = 1.5849e-13;
-const float kTimerDelay = 1/60.0;
+const float kTimerDelay = 1/60.0; //Alter this to draw more or less often
 
 @interface ZLHistogramAudioPlot() {
-    int tick;
-    float *dataBuffer;
-    size_t bufferCapacity;	// In samples
-    size_t index;	// In samples
-    
+    // ftt setup
     FFTSetup fftSetup;
     COMPLEX_SPLIT A;
     int log2n, n, nOver2;
+    float sampleRate, *dataBuffer;
+    size_t bufferCapacity, index;
     
-    float sampleRate;
-    float frequency;
-    
-    float *speeds;
-    float *times;
-    
-    // in percent
-    CGFloat rollingOffset;
-    
-    float *heightsByFrequency;
-    NSUInteger numOfBins;
+    // buffers
+    float *heightsByFrequency, *speeds, *times, *tSqrts, *vts, *deltaHeights;
 }
 
 @property (strong,nonatomic) NSMutableArray *heightsByTime;
@@ -47,7 +37,6 @@ const float kTimerDelay = 1/60.0;
 @synthesize color           = _color;
 @synthesize plotType        = _plotType;
 @synthesize numOfBins;
-@synthesize padding;
 @synthesize gain;
 @synthesize gravity;
 
@@ -83,16 +72,14 @@ const float kTimerDelay = 1/60.0;
                         [UIColor colorWithRed:40/255.0 green:181/255.0 blue:164/255.0 alpha:1],
                         [UIColor colorWithRed:208/255.0 green:221/255.0 blue:38/255.0 alpha:1],
                         ];
-    
 
-    // RealFFT setup
-    UInt32 maxFrames = 2048;
-    dataBuffer = (float*)malloc(maxFrames * sizeof(float));
-    log2n = log2f(maxFrames);
+    // ftt setup
+    dataBuffer = (float*)malloc(kMaxFrames * sizeof(float));
+    log2n = log2f(kMaxFrames);
     n = 1 << log2n;
-    assert(n == maxFrames);
-    nOver2 = maxFrames/2;
-    bufferCapacity = maxFrames;
+    assert(n == kMaxFrames);
+    nOver2 = kMaxFrames/2;
+    bufferCapacity = kMaxFrames;
     index = 0;
     A.realp = (float *)malloc(nOver2 * sizeof(float));
     A.imagp = (float *)malloc(nOver2 * sizeof(float));
@@ -113,9 +100,8 @@ const float kTimerDelay = 1/60.0;
     [self.timer invalidate];
     self.timer = nil;
     if( plotData ){free(plotData);}
-    if (heightsByFrequency) {free(heightsByFrequency);}
-    if (speeds) {free(speeds);}
-    if (times) {free(heightsByFrequency);}
+    
+    [self freeBuffersIfNeeded];
 }
 
 #pragma mark - Properties
@@ -123,91 +109,66 @@ const float kTimerDelay = 1/60.0;
     numOfBins = someNumOfBins;
     
     // reset buffers
-    if (heightsByFrequency) {free(heightsByFrequency);}
-    if (speeds) {free(speeds);}
-    if (times) {free(times);}
+    [self freeBuffersIfNeeded];
     
     heightsByFrequency = (float *)calloc(sizeof(float), numOfBins);
+    speeds = (float *)calloc(sizeof(float), numOfBins);
+    times = (float *)calloc(sizeof(float), numOfBins);
+    tSqrts = (float *)calloc(sizeof(float), numOfBins);
+    vts = (float *)calloc(sizeof(float), numOfBins);
+    deltaHeights = (float *)calloc(sizeof(float), numOfBins);
+    
     self.heightsByTime = [NSMutableArray arrayWithCapacity:numOfBins];
     for (int i=0; i<numOfBins; i++) {
         self.heightsByTime[i] = [NSNumber numberWithFloat:0];
     }
-    speeds = (float *)calloc(sizeof(int), numOfBins);
-    times = (float *)calloc(sizeof(int), numOfBins);
-    rollingOffset = 0;
 }
 
 #pragma mark - Timer Callback
 - (void)updateHeights {
-    if (heightsByFrequency) {
-        // increment time
-        vDSP_vsadd(times, 1, &kTimerDelay, times, 1, numOfBins);
-        
-        // clamp time
-        static const float timeMin = 1.5, timeMax = 10;
-        vDSP_vclip(times, 1, &timeMin, &timeMax, times, 1, numOfBins);
-        
-        // increment speed
-        vDSP_vsma(times, 1, &gravity, speeds, 1, speeds, 1, numOfBins);
-        
-        // increment height
-        float *tSqrt = (float *)calloc(sizeof(float), numOfBins);
-        vDSP_vsq(times, 1, tSqrt, 1, numOfBins);
-        float *vt = (float *)calloc(sizeof(float), numOfBins);
-        vDSP_vmul(speeds, 1, times, 1, vt, 1, numOfBins);
-        float aOver2 = gravity/2;
-        float *deltaHeight = (float *)calloc(sizeof(float), numOfBins);
-        vDSP_vsma(tSqrt, 1, &aOver2, vt, 1, deltaHeight, 1, numOfBins);
-        vDSP_vneg(deltaHeight, 1, deltaHeight, 1, numOfBins);
-        vDSP_vadd(heightsByFrequency, 1, deltaHeight, 1, heightsByFrequency, 1, numOfBins);
-        
-        free(tSqrt);
-        free(vt);
-        free(deltaHeight);
-    }
+    // increment time
+    vDSP_vsadd(times, 1, &kTimerDelay, times, 1, numOfBins);
+    
+    // clamp time
+    static const float timeMin = 1.5, timeMax = 10;
+    vDSP_vclip(times, 1, &timeMin, &timeMax, times, 1, numOfBins);
+    
+    // increment speed
+    vDSP_vsma(times, 1, &gravity, speeds, 1, speeds, 1, numOfBins);
+    
+    // increment height
+    vDSP_vsq(times, 1, tSqrts, 1, numOfBins);
+    vDSP_vmul(speeds, 1, times, 1, vts, 1, numOfBins);
+    float aOver2 = gravity/2;
+    vDSP_vsma(tSqrts, 1, &aOver2, vts, 1, deltaHeights, 1, numOfBins);
+    vDSP_vneg(deltaHeights, 1, deltaHeights, 1, numOfBins);
+    vDSP_vadd(heightsByFrequency, 1, deltaHeights, 1, heightsByFrequency, 1, numOfBins);
+    [self _refreshDisplay];
 }
 
 #pragma mark - Update Buffers
 - (void)setSampleData:(float *)data
               length:(int)length {
-    int requiredTickes = 1; // Alter this to draw more or less often
-    tick = (tick+1)%requiredTickes;
-    
-    uint32_t stride = 1;
-    
     // Fill the buffer with our sampled data. If we fill our buffer, run the fft.
     int inNumberFrames = length;
-    int read = bufferCapacity - index;
+    int read = (int)(bufferCapacity - index);
     if (read > inNumberFrames) {
         memcpy((float *)dataBuffer + index, data, inNumberFrames*sizeof(float));
         index += inNumberFrames;
-        
-        rollingOffset = (float)index/bufferCapacity;
     } else {
-        rollingOffset = 0;
         // If we enter this conditional, our buffer will be filled and we should perform the FFT.
         memcpy((float *)dataBuffer + index, data, read*sizeof(float));
         
         // Reset the index.
         index = 0;
-        
-        /*************** FFT ***************/
-        /**
-         Look at the real signal as an interleaved complex vector by casting it.
-         Then call the transformation function vDSP_ctoz to get a split complex
-         vector, which for a real signal, divides into an even-odd configuration.
-         */
+
+        // fft
         vDSP_ctoz((COMPLEX*)dataBuffer, 2, &A, 1, nOver2);
-        
-        // Carry out a Forward FFT transform.
-        vDSP_fft_zrip(fftSetup, &A, stride, log2n, FFT_FORWARD);
-        
-        // The output signal is now in a split real form. Use the vDSP_ztoc to get
-        // a split real vector.
+        vDSP_fft_zrip(fftSetup, &A, 1, log2n, FFT_FORWARD);
         vDSP_ztoc(&A, 1, (COMPLEX *)dataBuffer, 2, nOver2);
-        Float32 one = 1;
         
-        // counvert to dB
+        // convert to dB
+        Float32 one = 1;
         vDSP_vsq(dataBuffer, 1, dataBuffer, 1, inNumberFrames);
         vDSP_vsadd(dataBuffer, 1, &kAdjust0DB, dataBuffer, 1, inNumberFrames);
         vDSP_vdbcon(dataBuffer, 1, &one, dataBuffer, 1, inNumberFrames, 0);
@@ -219,31 +180,24 @@ const float kTimerDelay = 1/60.0;
         float maxHeight = 0;
         
         for(NSUInteger i=0;i<numOfBins;i++) {
+            // calculate new column height
             float avg = 0;
             vDSP_meanv(dataBuffer+minFrequencyIndex+i*numDataPointsPerColumn, 1, &avg, numDataPointsPerColumn);
-            
-            CGFloat columnHeight = MIN(avg*gain, CGRectGetHeight(self.bounds));
+            CGFloat columnHeight = MIN(avg*self.gain, CGRectGetHeight(self.bounds));
             maxHeight = MAX(maxHeight, columnHeight);
-            CGFloat previousHeight = heightsByFrequency[i];
-
-            CGFloat newHeight = MAX(columnHeight, previousHeight);
-            if (columnHeight>previousHeight) {
+            
+            // set column height and reset speed and time if needed
+            if (columnHeight>heightsByFrequency[i]) {
+                heightsByFrequency[i] = columnHeight;
                 speeds[i] = 0;
                 times[i] = 0;
             }
-            
-            heightsByFrequency[i] = newHeight;
         }
         
         [self.heightsByTime addObject: [NSNumber numberWithFloat:maxHeight]];
-        
         if (self.heightsByTime.count>numOfBins) {
             [self.heightsByTime removeObjectAtIndex:0];
         }
-    }
-    
-    if (tick==0) {
-        [self _refreshDisplay];
     }
 }
 
@@ -263,14 +217,14 @@ const float kTimerDelay = 1/60.0;
     UIRectFill(frame);
     
     CGFloat columnWidth = rect.size.width/numOfBins;
-    CGFloat actualWidth = MAX(1, columnWidth*(1-2*padding));
+    CGFloat actualWidth = MAX(1, columnWidth*(1-2*self.padding));
     CGFloat actualPadding = (columnWidth-actualWidth)/2;
     // TODO: warning: padding is larger than width
     
     for(NSUInteger i=0;i<numOfBins;i++) {
         CGFloat columnHeight = _plotType==EZPlotTypeBuffer ? heightsByFrequency[i] : [self.heightsByTime[i] floatValue];
-        columnHeight = MAX(0, columnHeight);
-        CGFloat columnX = i*columnWidth - (_plotType==EZPlotTypeBuffer ? 0 : columnWidth*rollingOffset);
+        if (columnHeight<=0) continue;
+        CGFloat columnX = i*columnWidth - (_plotType==EZPlotTypeBuffer ? 0 : columnWidth*[self rollingOffset]);
         UIBezierPath* rectanglePath = [UIBezierPath bezierPathWithRect:
                                        CGRectMake(columnX+actualPadding, CGRectGetHeight(frame)-columnHeight, actualWidth, columnHeight)];
         UIColor *color = (_plotType == EZPlotTypeBuffer&&self.colors) ? [self.colors objectAtIndex:i%self.colors.count] : self.color;
@@ -296,6 +250,20 @@ void printFloatArray(float * array, int length, NSString *prefix) {
         [str appendFormat:@"%f ", array[i]];
     }
     NSLog(@"%@ %@", prefix, str);
+}
+
+/// Return rolling offset for rolling plot in percent
+- (CGFloat)rollingOffset {
+    return (CGFloat)index/bufferCapacity;
+}
+
+- (void)freeBuffersIfNeeded {
+    if (heightsByFrequency) {free(heightsByFrequency);}
+    if (speeds) {free(speeds);}
+    if (times) {free(times);}
+    if (tSqrts) {free(tSqrts);}
+    if (vts) {free(vts);}
+    if (deltaHeights) {free(deltaHeights);}
 }
 
 @end
