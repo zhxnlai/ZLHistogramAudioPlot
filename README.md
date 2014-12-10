@@ -1,7 +1,7 @@
 ZLHistogramAudioPlot
 ====================
 
-A hardware-accelerated audio visualization view using EZAudio, inspired by [AudioCopy](https://itunes.apple.com/us/app/audiocopy/id719137307?mt=8). ZLHistogramAudioPlot was originally developed for [Murmur](http://zhxnlai.github.io/#/murmur)
+A hardware-accelerated audio visualization view using EZAudio, inspired by [AudioCopy](https://itunes.apple.com/us/app/audiocopy/id719137307?mt=8). ZLHistogramAudioPlot was originally developed for [Murmur](http://zhxnlai.github.io/#/murmur).
 
 Preview
 ---

@@ -17,42 +17,42 @@
 // By default this will record a file to the application's documents directory (within the application's sandbox)
 #define kAudioFilePath @"EZAudioTest.m4a"
 
-@interface RecordViewController : UIViewController <AVAudioPlayerDelegate,EZMicrophoneDelegate>
+@interface RecordViewController : UIViewController <AVAudioPlayerDelegate, EZMicrophoneDelegate>
 
 /**
  Use a OpenGL based plot to visualize the data coming in
  */
-@property (nonatomic,weak) IBOutlet ZLHistogramAudioPlot *audioPlot;
+@property (nonatomic, weak) IBOutlet ZLHistogramAudioPlot* audioPlot;
 
 /**
  A flag indicating whether we are recording or not
  */
-@property (nonatomic,assign) BOOL isRecording;
+@property (nonatomic, assign) BOOL isRecording;
 
 /**
  The microphone component
  */
-@property (nonatomic,strong) EZMicrophone *microphone;
+@property (nonatomic, strong) EZMicrophone* microphone;
 
 /**
  The recorder component
  */
-@property (nonatomic,strong) EZRecorder *recorder;
+@property (nonatomic, strong) EZRecorder* recorder;
 
 #pragma mark - Actions
 /**
  Stops the recorder and starts playing whatever has been recorded.
  */
--(IBAction)playFile:(id)sender;
+- (IBAction)playFile:(id)sender;
 
 /**
  Toggles the microphone on and off. When the microphone is on it will send its delegate (aka this view controller) the audio data in various ways (check out the EZMicrophoneDelegate documentation for more details);
  */
--(IBAction)toggleMicrophone:(id)sender;
+- (IBAction)toggleMicrophone:(id)sender;
 
 /**
  Toggles the microphone on and off. When the microphone is on it will send its delegate (aka this view controller) the audio data in various ways (check out the EZMicrophoneDelegate documentation for more details);
  */
--(IBAction)toggleRecording:(id)sender;
+- (IBAction)toggleRecording:(id)sender;
 
 @end

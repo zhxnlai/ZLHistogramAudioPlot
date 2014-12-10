@@ -29,9 +29,9 @@
 @property (nonatomic) float gravity;
 
 /// The color of bins in the audio plot
-@property (strong,nonatomic) UIColor *color;
+@property (strong, nonatomic) UIColor* color;
 
 /// An array of color objects defining the color of each bin in the audio plot. If not set, the color attribute will be used instead. Currently not supported by Buffer type.
-@property (strong,nonatomic) NSArray *colors;
+@property (strong, nonatomic) NSArray* colors;
 
 @end
