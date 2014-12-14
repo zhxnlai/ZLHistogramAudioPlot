@@ -28,7 +28,7 @@
 @property (nonatomic) CGFloat gain;
 
 /// A float that specifies the vertical gravitational acceleration applied to
-/// bins in the audio plot. Default: 10 pixel/s^2
+/// bins in the audio plot. Default: 10 pixel/sec^2
 @property (nonatomic) float gravity;
 
 /// The color of bins in the audio plot

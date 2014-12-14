@@ -12,7 +12,7 @@
 
 const UInt32 kMaxFrames = 2048;
 const Float32 kAdjust0DB = 1.5849e-13;
-const float kTimerDelay = 1 / 60.0; // Alter this to draw more or less often
+const float kFrameInterval = 1; // Alter this to draw more or less often
 
 @interface ZLHistogramAudioPlot () {
     // ftt setup
@@ -27,7 +27,7 @@ const float kTimerDelay = 1 / 60.0; // Alter this to draw more or less often
 }
 
 @property (strong, nonatomic) NSMutableArray *heightsByTime;
-@property (strong, nonatomic) NSTimer *timer;
+@property (strong, nonatomic) CADisplayLink *displaylink;
 
 @end
 
@@ -37,7 +37,6 @@ const float kTimerDelay = 1 / 60.0; // Alter this to draw more or less often
 @synthesize plotType = _plotType;
 @synthesize numOfBins;
 @synthesize gain;
-@synthesize gravity;
 
 #pragma mark - Init
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -61,7 +60,7 @@ const float kTimerDelay = 1 / 60.0; // Alter this to draw more or less often
     self.numOfBins = 30;
     self.padding = 1 / 10.0;
     self.gain = 10;
-    self.gravity = 10 * kTimerDelay;
+    self.gravity = 10;
     self.color = [UIColor lightGrayColor];
     self.colors = @[
         [UIColor colorWithRed:242 / 255.0
@@ -113,20 +112,17 @@ const float kTimerDelay = 1 / 60.0; // Alter this to draw more or less often
     AVAudioSession *session = [AVAudioSession sharedInstance];
     sampleRate = session.sampleRate;
 
-    // schedule timer
-    if (self.timer == nil) {
-        self.timer =
-            [NSTimer scheduledTimerWithTimeInterval:kTimerDelay
-                                             target:self
-                                           selector:@selector(updateHeights)
-                                           userInfo:nil
-                                            repeats:YES];
-    }
+    self.displaylink =
+        [CADisplayLink displayLinkWithTarget:self
+                                    selector:@selector(updateHeights)];
+    self.displaylink.frameInterval = kFrameInterval;
+    [self.displaylink addToRunLoop:[NSRunLoop currentRunLoop]
+                           forMode:NSRunLoopCommonModes];
 }
 
 - (void)dealloc {
-    [self.timer invalidate];
-    self.timer = nil;
+    [self.displaylink invalidate];
+    self.displaylink = nil;
     if (plotData) {
         free(plotData);
     }
@@ -156,20 +152,23 @@ const float kTimerDelay = 1 / 60.0; // Alter this to draw more or less often
 
 #pragma mark - Timer Callback
 - (void)updateHeights {
+    float delay = self.displaylink.duration * self.displaylink.frameInterval;
+
     // increment time
-    vDSP_vsadd(times, 1, &kTimerDelay, times, 1, numOfBins);
+    vDSP_vsadd(times, 1, &delay, times, 1, numOfBins);
 
     // clamp time
     static const float timeMin = 1.5, timeMax = 10;
     vDSP_vclip(times, 1, &timeMin, &timeMax, times, 1, numOfBins);
 
     // increment speed
-    vDSP_vsma(times, 1, &gravity, speeds, 1, speeds, 1, numOfBins);
+    float g = self.gravity * delay;
+    vDSP_vsma(times, 1, &g, speeds, 1, speeds, 1, numOfBins);
 
     // increment height
     vDSP_vsq(times, 1, tSqrts, 1, numOfBins);
     vDSP_vmul(speeds, 1, times, 1, vts, 1, numOfBins);
-    float aOver2 = gravity / 2;
+    float aOver2 = g / 2;
     vDSP_vsma(tSqrts, 1, &aOver2, vts, 1, deltaHeights, 1, numOfBins);
     vDSP_vneg(deltaHeights, 1, deltaHeights, 1, numOfBins);
     vDSP_vadd(heightsByFrequency, 1, deltaHeights, 1, heightsByFrequency, 1,
