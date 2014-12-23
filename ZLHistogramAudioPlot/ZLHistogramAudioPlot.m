@@ -12,7 +12,7 @@
 
 const UInt32 kMaxFrames = 2048;
 const Float32 kAdjust0DB = 1.5849e-13;
-const float kFrameInterval = 1; // Alter this to draw more or less often
+const NSInteger kFrameInterval = 1; // Alter this to draw more or less often
 
 @interface ZLHistogramAudioPlot () {
     // ftt setup
@@ -108,10 +108,11 @@ const float kFrameInterval = 1; // Alter this to draw more or less often
     // inherited properties
     _plotType = EZPlotTypeRolling;
 
-    // Configure audio session
+    // configure audio session
     AVAudioSession *session = [AVAudioSession sharedInstance];
     sampleRate = session.sampleRate;
 
+    // start timer
     self.displaylink =
         [CADisplayLink displayLinkWithTarget:self
                                     selector:@selector(updateHeights)];
@@ -126,7 +127,6 @@ const float kFrameInterval = 1; // Alter this to draw more or less often
     if (plotData) {
         free(plotData);
     }
-
     [self freeBuffersIfNeeded];
 }
 
@@ -137,13 +137,13 @@ const float kFrameInterval = 1; // Alter this to draw more or less often
     // reset buffers
     [self freeBuffersIfNeeded];
 
+    // create buffers
     heightsByFrequency = (float *)calloc(sizeof(float), numOfBins);
     speeds = (float *)calloc(sizeof(float), numOfBins);
     times = (float *)calloc(sizeof(float), numOfBins);
     tSqrts = (float *)calloc(sizeof(float), numOfBins);
     vts = (float *)calloc(sizeof(float), numOfBins);
     deltaHeights = (float *)calloc(sizeof(float), numOfBins);
-
     self.heightsByTime = [NSMutableArray arrayWithCapacity:numOfBins];
     for (int i = 0; i < numOfBins; i++) {
         self.heightsByTime[i] = [NSNumber numberWithFloat:0];
@@ -152,6 +152,7 @@ const float kFrameInterval = 1; // Alter this to draw more or less often
 
 #pragma mark - Timer Callback
 - (void)updateHeights {
+    // delay from last frame
     float delay = self.displaylink.duration * self.displaylink.frameInterval;
 
     // increment time
@@ -179,7 +180,7 @@ const float kFrameInterval = 1; // Alter this to draw more or less often
 
 #pragma mark - Update Buffers
 - (void)setSampleData:(float *)data length:(int)length {
-    // Fill the buffer with our sampled data. If we fill our buffer, run the
+    // fill the buffer with our sampled data. If we fill our buffer, run the
     // fft.
     int inNumberFrames = length;
     int read = (int)(bufferCapacity - index);
@@ -188,11 +189,11 @@ const float kFrameInterval = 1; // Alter this to draw more or less often
                inNumberFrames * sizeof(float));
         index += inNumberFrames;
     } else {
-        // If we enter this conditional, our buffer will be filled and we should
+        // if we enter this conditional, our buffer will be filled and we should
         // perform the FFT.
         memcpy((float *)dataBuffer + index, data, read * sizeof(float));
 
-        // Reset the index.
+        // reset the index.
         index = 0;
 
         // fft
@@ -207,6 +208,7 @@ const float kFrameInterval = 1; // Alter this to draw more or less often
         vDSP_vdbcon(dataBuffer, 1, &one, dataBuffer, 1, inNumberFrames, 0);
         vDSP_vthr(dataBuffer, 1, &zero, dataBuffer, 1, inNumberFrames);
 
+        // aux
         float mul = (sampleRate / bufferCapacity) / 2;
         int minFrequencyIndex = self.minFrequency / mul;
         int maxFrequencyIndex = self.maxFrequency / mul;
@@ -224,7 +226,7 @@ const float kFrameInterval = 1; // Alter this to draw more or less often
                 MIN(avg * self.gain, CGRectGetHeight(self.bounds));
             maxHeight = MAX(maxHeight, columnHeight);
 
-            // set column height and reset speed and time if needed
+            // set column height, speed and time if needed
             if (columnHeight > heightsByFrequency[i]) {
                 heightsByFrequency[i] = columnHeight;
                 speeds[i] = 0;
@@ -249,7 +251,7 @@ const float kFrameInterval = 1; // Alter this to draw more or less often
     CGContextSaveGState(ctx);
     CGRect frame = self.bounds;
 
-    // Set the background color
+    // set the background color
     [(UIColor *)self.backgroundColor set];
     UIRectFill(frame);
 

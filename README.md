@@ -25,29 +25,34 @@ Checkout the [demo app](https://github.com/zhxnlai/ZLHistogramAudioPlot/tree/mas
 
 Customizable attributes:
 ~~~objective-c
-/// The upper bound of the frequency range the audio plot will process. Default: 10000Hz
+/// The upper bound of the frequency range the audio plot will display. Default:
+/// 10000Hz
 @property (nonatomic) float maxFrequency;
 
-/// The lower bound of the frequency range the audio plot will process. Default: 1200Hz
+/// The lower bound of the frequency range the audio plot will display. Default:
+/// 1200Hz
 @property (nonatomic) float minFrequency;
 
 /// The number of bins in the audio plot. Default: 30
 @property (nonatomic) NSUInteger numOfBins;
 
-/// The padding of the bins in percent. Default: 0.1
+/// The padding of each bin in percent width. Default: 0.1
 @property (nonatomic) CGFloat padding;
 
-/// The gain applied to the heights of bins. Default: 10
+/// The gain applied to the height of each bin. Default: 10
 @property (nonatomic) CGFloat gain;
 
-/// A float that specifies the vertical gravitational acceleration applied to bins in the audio plot. Default: 10 pixel/s^2
+/// A float that specifies the vertical gravitational acceleration applied to
+/// each bin. Default: 10 pixel/sec^2
 @property (nonatomic) float gravity;
 
-/// The color of bins in the audio plot
-@property (strong,nonatomic) UIColor *color;
+/// The color of all bins in the audio plot.
+@property (strong, nonatomic) UIColor *color;
 
-/// An array of color objects defining the color of each bin in the audio plot. If not set, the color attribute will be used instead. Currently not supported by Buffer type.
-@property (strong,nonatomic) NSArray *colors;
+/// An array of color objects defining the color of each bin in the audio plot.
+/// If not set, the color attribute will be used instead. Currently only
+/// supported by plot type EZPlotTypeBuffer.
+@property (strong, nonatomic) NSArray *colors;
 ~~~
 
 Dependencies
